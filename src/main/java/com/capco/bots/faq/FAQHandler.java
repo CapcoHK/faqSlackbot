@@ -62,8 +62,12 @@ public class FAQHandler implements IBotHandler {
             Map<String, String> questionAnswersMap = new HashMap<>();
             iLogger.debug("Output from Server .... \n");
             while ((output = br.readLine()) != null) {
-                questionAnswersMap.putAll(parseResponse(output));
-                questionAnswersMap.forEach((k, v) -> result.append(System.lineSeparator() + k).append(System.lineSeparator() + v));
+                if(questionAnswersMap.isEmpty()) {
+                    result.append("Unable to process request. Please try again.");
+                }else{
+                    questionAnswersMap.putAll(parseResponse(output));
+                    questionAnswersMap.forEach((k, v) -> result.append(System.lineSeparator() + k).append(System.lineSeparator() + v).append(System.lineSeparator()));
+                }
                 iLogger.debug(questionAnswersMap);
             }
             conn.disconnect();
