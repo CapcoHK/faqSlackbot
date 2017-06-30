@@ -45,7 +45,10 @@ public class FAQHandler implements IBotHandler {
         StringBuffer result = new StringBuffer();
         try {
             message = message.replaceAll(" ", "+");
-            String urlString = "http://localhost:8983/solr/answer?q=" + message + "%3F&defType=qa&qa=true&qa.qf=body&wt=json";
+            if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
+                return message.trim() + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
+            }
+            String urlString = "http://localhost:8983/solr/answer?q=" + message + "%3F&defType=qa&qa=true&qa.qf=doctitle&wt=json";
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -66,7 +69,7 @@ public class FAQHandler implements IBotHandler {
                 Map<String, String> parseMap = parseResponse(output);
                 iLogger.debug("parsed reply from server :"+parseMap);
                 if(parseMap.isEmpty()) {
-                    result.append("Unable to process request. Please try again.");
+                    result.append("No answer found for your question. Please contact admin.");
                 }else{
                     questionAnswersMap.putAll(parseMap);
                     questionAnswersMap.forEach((k, v) -> result.append(System.lineSeparator() + k).append(System.lineSeparator() + v).append(System.lineSeparator()));
