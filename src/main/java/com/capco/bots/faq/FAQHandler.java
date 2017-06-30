@@ -63,10 +63,12 @@ public class FAQHandler implements IBotHandler {
             iLogger.debug("Output from Server .... \n");
             while ((output = br.readLine()) != null) {
                 iLogger.debug("Received raw reply from Server:"+output);
-                if(questionAnswersMap.isEmpty()) {
+                Map<String, String> parseMap = parseResponse(output);
+                iLogger.debug("parsed reply from server :"+parseMap);
+                if(parseMap.isEmpty()) {
                     result.append("Unable to process request. Please try again.");
                 }else{
-                    questionAnswersMap.putAll(parseResponse(output));
+                    questionAnswersMap.putAll(parseMap);
                     questionAnswersMap.forEach((k, v) -> result.append(System.lineSeparator() + k).append(System.lineSeparator() + v).append(System.lineSeparator()));
                 }
                 iLogger.debug("QuestionAnswersMap :"+questionAnswersMap);
