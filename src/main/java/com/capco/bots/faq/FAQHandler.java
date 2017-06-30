@@ -62,13 +62,14 @@ public class FAQHandler implements IBotHandler {
             Map<String, String> questionAnswersMap = new HashMap<>();
             iLogger.debug("Output from Server .... \n");
             while ((output = br.readLine()) != null) {
+                iLogger.debug("Received raw reply from Server:"+output);
                 if(questionAnswersMap.isEmpty()) {
                     result.append("Unable to process request. Please try again.");
                 }else{
                     questionAnswersMap.putAll(parseResponse(output));
                     questionAnswersMap.forEach((k, v) -> result.append(System.lineSeparator() + k).append(System.lineSeparator() + v).append(System.lineSeparator()));
                 }
-                iLogger.debug(questionAnswersMap);
+                iLogger.debug("QuestionAnswersMap :"+questionAnswersMap);
             }
             conn.disconnect();
         } catch (MalformedURLException e) {
