@@ -15,11 +15,17 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.nio.file.StandardOpenOption.APPEND;
 
 /**
  * Created by vijayalaxmi on 23/6/2017.
@@ -28,8 +34,15 @@ public class FAQHandler implements IBotHandler {
 
     private static Logger iLogger = LogManager.getLogger(FAQHandler.class);
 
+    private final String filepath;
+
+    public String getFilepath() {
+        return filepath;
+    }
+
     public FAQHandler(String path) {
         iLogger.debug("FAQHandler(" + path + ")");
+        filepath = path;
         //TODO code to be implemented
     }
 
@@ -63,12 +76,14 @@ public class FAQHandler implements IBotHandler {
                     (conn.getInputStream())));
             String output;
             Map<String, String> questionAnswersMap = new HashMap<>();
+            Path file = Paths.get(getFilepath());
             iLogger.debug("Output from Server .... \n");
             while ((output = br.readLine()) != null) {
                 iLogger.debug("Received raw reply from Server:"+output);
                 Map<String, String> parseMap = parseResponse(output);
                 iLogger.debug("parsed reply from server :"+parseMap);
                 if(parseMap.isEmpty()) {
+                    Files.write(file, (System.lineSeparator()+new Date()+" "+message).getBytes(), APPEND);
                     result.append("No answer found for your question. Please contact admin.");
                 }else{
                     questionAnswersMap.putAll(parseMap);

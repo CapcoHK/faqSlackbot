@@ -56,11 +56,11 @@ public class SlackBotMain implements ITcpConnectionHandler {
 
     }
 
-    private void initializeMap(String phonePath) {
-        PhoneDirectory directory = new PhoneDirectory(phonePath);
+    private void initializeMap(String filepath) {
+        PhoneDirectory directory = new PhoneDirectory(filepath);
         iHandlerMap.put(directory.getId(), directory);
 
-        FAQHandler faqHandler = new FAQHandler(phonePath);
+        FAQHandler faqHandler = new FAQHandler(filepath);
         iHandlerMap.put(faqHandler.getId(), faqHandler);
     }
 
