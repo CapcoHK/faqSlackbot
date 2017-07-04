@@ -45,22 +45,21 @@ public class SlackBotMain implements ITcpConnectionHandler {
         Integer port = Integer.parseInt(args[1]);
         String hostname = args[0];
         String phonePath = args[2];
-
-        new SlackBotMain().start(hostname, port, phonePath);
+        String missingQuestionsFile = args[3];
+        new SlackBotMain().start(hostname, port, phonePath, missingQuestionsFile);
     }
 
-    private void start(String hostname, Integer port, String phonePath) {
+    private void start(String hostname, Integer port, String phonePath, String missingQuestionsFile) {
         iHandlerMap = new HashMap<>();
-        initializeMap(phonePath);
+        initializeMap(phonePath, missingQuestionsFile);
         startServer(hostname, port);
-
     }
 
-    private void initializeMap(String filepath) {
+    private void initializeMap(String filepath, String missingQuestionsFile) {
         PhoneDirectory directory = new PhoneDirectory(filepath);
         iHandlerMap.put(directory.getId(), directory);
 
-        FAQHandler faqHandler = new FAQHandler(filepath);
+        FAQHandler faqHandler = new FAQHandler(missingQuestionsFile);
         iHandlerMap.put(faqHandler.getId(), faqHandler);
     }
 
