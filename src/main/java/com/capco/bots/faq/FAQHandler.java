@@ -112,7 +112,7 @@ public class FAQHandler implements IBotHandler {
             JsonNode rootNode = mapper.readTree(response);
 
             Map<Integer, String> questionsMap = new HashMap<>();
-            HashMap<Integer, String> answersMap = new HashMap<>();
+            Map<Integer, String> answersMap = new HashMap<>();
             Iterator<Map.Entry<String, JsonNode>> fieldsIterator = rootNode.fields();
             while (fieldsIterator.hasNext()) {
                 Map.Entry<String, JsonNode> field = fieldsIterator.next();
@@ -121,12 +121,10 @@ public class FAQHandler implements IBotHandler {
                     questionsMap = Stream.of(docs)
                             .collect(Collectors.toMap(p -> Integer.parseInt(p.getDocid()),
                                     p -> "Question: " + p.getDoctitle()[0]));
-                }
-                if (field.getKey().equals(qaResponse)) {
-                    for (int i = 1; i < field.getValue().size(); i += 2) {
-                        answersMap.put(Integer.parseInt(field.getValue().get(i).get(1).textValue()),
-                                "Answer: " + field.getValue().get(i).get(5).textValue());
-                    }
+                    answersMap = Stream.of(docs)
+                            .collect(Collectors.toMap(p -> Integer.parseInt(p.getDocid()),
+                                    p -> "Answer: " + p.getBody()[0]));
+
                 }
             }
 
