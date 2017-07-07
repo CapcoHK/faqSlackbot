@@ -38,7 +38,7 @@ public class FAQHandler implements IBotHandler {
 
     public FAQHandler(String unansweredQuestionFilePath) {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
-        logger.debug("Unanswered questions will be logged in {}", unansweredQuestionFilePath);
+        logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class FAQHandler implements IBotHandler {
 
     @Override
     public String processMessage(String message) {
-        logger.debug("Processing message :" + message);
+        logger.debug("Processing message : {}", message);
         if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
             return message.trim() + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
         }
@@ -62,7 +62,7 @@ public class FAQHandler implements IBotHandler {
             result = "Unable to process :" + message;
             logger.error("Error while processing message : {}", message, e);
         }
-        logger.debug("returning result :" + result);
+        logger.debug("returning result : {}", result);
         return result;
     }
 
@@ -120,11 +120,17 @@ public class FAQHandler implements IBotHandler {
         return message;
     }
 
-    Map<String, String> parseResponse(String response) throws IOException {
+    Map<String, String> parseResponse(String response) {
         String questionResponse = "response";
         JsonFactory factory = new JsonFactory();
         ObjectMapper mapper = new ObjectMapper(factory);
-        JsonNode rootNode = mapper.readTree(response);
+        JsonNode rootNode;
+        try {
+            rootNode = mapper.readTree(response);
+        } catch (IOException e) {
+            logger.error("Unparsable JSON response sent by webservice {}", response, e);
+            throw new IllegalArgumentException("Invalid JSON response received from webservice", e);
+        }
 
         Map<Integer, String> questionsMap = new HashMap<>();
         Map<Integer, String> answersMap = new HashMap<>();
@@ -132,7 +138,7 @@ public class FAQHandler implements IBotHandler {
         while (fieldsIterator.hasNext()) {
             Map.Entry<String, JsonNode> field = fieldsIterator.next();
             if (field.getKey().equals(questionResponse)) {
-                Docs[] docs = new ObjectMapper().readValue(field.getValue().get("docs").toString(), Docs[].class);
+                Docs[] docs = getDocs(response, field);
                 questionsMap = Stream.of(docs)
                         .collect(Collectors.toMap(p -> Integer.parseInt(p.getDocid()),
                                 p -> "Question: " + p.getDoctitle()[0]));
@@ -144,6 +150,16 @@ public class FAQHandler implements IBotHandler {
         }
 
         return questionsMap.keySet().stream().collect(Collectors.toMap(questionsMap::get, answersMap::get));
+    }
+
+    private Docs[] getDocs(String response, Map.Entry<String, JsonNode> field) {
+        try {
+            return new ObjectMapper().readValue(field.getValue().get("docs").toString(), Docs[].class);
+        } catch (IOException e) {
+            logger.error("Unparsable JSON response sent by webservice {}", response, e);
+            logger.error("Specific error while parsing {} : {}", field.getKey(), field.getValue().toString());
+            throw new IllegalArgumentException("Invalid JSON response received from webservice", e);
+        }
     }
 
     @Override
