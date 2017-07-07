@@ -37,8 +37,8 @@ public class SlackBotMain implements ITcpConnectionHandler {
 
     public static void main(String[] args) {
 
-        if (args.length < 3) {
-            iLogger.info("Usage : hostname port path");
+        if (args.length < 4) {
+            iLogger.info("Usage : hostname port path missing_que_file_name");
             System.exit(0);
 
         }
