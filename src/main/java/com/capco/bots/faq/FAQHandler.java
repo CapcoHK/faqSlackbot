@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 /**
  * Handles FAQs
@@ -105,7 +106,7 @@ public class FAQHandler implements IBotHandler {
     }
 
     private void logUnansweredQuestion(String message) throws IOException {
-        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + " " + message).getBytes(), APPEND);
+        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + " " + message).getBytes(), CREATE, APPEND);
     }
 
     private URL generateQueryURL(String message) throws MalformedURLException {
