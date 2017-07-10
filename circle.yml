@@ -1,4 +1,5 @@
 test:
   post:
     - mv target/*.jar $CIRCLE_ARTIFACTS
-    - mv scripts/*.* $CIRCLE_ARTIFACTS
+    - mv scripts/py/*.* $CIRCLE_ARTIFACTS
+    - mv scripts/sh/*.* $CIRCLE_ARTIFACTS
