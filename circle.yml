@@ -1,5 +1,8 @@
 test:
   post:
-    - mv target/*.jar $CIRCLE_ARTIFACTS/jar
+    - mkdir $CIRCLE_ARTIFACTS/jars
+    - mkdir $CIRCLE_ARTIFACTS/py
+    - mkdir $CIRCLE_ARTIFACTS/sh
+    - mv target/*.jar $CIRCLE_ARTIFACTS/jars
     - mv scripts/py/*.* $CIRCLE_ARTIFACTS/py
     - mv scripts/sh/*.* $CIRCLE_ARTIFACTS/sh
