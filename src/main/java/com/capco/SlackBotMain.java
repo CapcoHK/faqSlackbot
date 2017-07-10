@@ -85,18 +85,19 @@ public class SlackBotMain implements ITcpConnectionHandler {
             client.close();
         }
         String input = new String(Arrays.copyOfRange(byteBuffer.array(), 0, byteBuffer.position()));
-        int indexOfFirstSpace = input.indexOf(' ');
+        String[] splits = input.split(" ");
         String response = "Unable to identify the command " + input + " . Please type in phone name ";
-        if (indexOfFirstSpace > 0) {
-            String command = input.substring(0, indexOfFirstSpace);
-            String data = input.substring(indexOfFirstSpace + 1);
+        if (splits.length > 2) {
+            String user = splits[0];
+            String command = splits[1];
+            String data = String.join(" ", Arrays.copyOfRange(splits, 2, splits.length));
             switch (IBotsEnum.valueOf(command.trim().toUpperCase())) {
                 case PHONE: {
-                    response = iHandlerMap.get(IBotsEnum.PHONE.toString()).processMessage(data);
+                    response = iHandlerMap.get(IBotsEnum.PHONE.toString()).processMessage(user, data);
                     break;
                 }
                 case FAQ: {
-                    response = iHandlerMap.get(IBotsEnum.FAQ.toString()).processMessage(data);
+                    response = iHandlerMap.get(IBotsEnum.FAQ.toString()).processMessage(user, data);
                     break;
                 }
                 default:

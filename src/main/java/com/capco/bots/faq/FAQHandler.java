@@ -48,8 +48,8 @@ public class FAQHandler implements IBotHandler {
     }
 
     @Override
-    public String processMessage(String message) {
-        logger.debug("Processing message : {}", message);
+    public String processMessage(String user, String message) {
+        logger.debug("User : {}, message : {}", user, message);
         if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
             return message.trim() + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
         }
@@ -81,7 +81,7 @@ public class FAQHandler implements IBotHandler {
                 logger.debug("parsed reply from server : {}", parseMap);
                 if(parseMap.isEmpty()) {
                     logUnansweredQuestion(originalMessage);
-                    result.append("No answer found for your question. Please contact admin.");
+                    result.append("Couldn't find answer to your query. We have stored your query and look into it. Meanwhile feel free to contact admin if urgent...");
                 }else{
                     questionAnswersMap.putAll(parseMap);
                     questionAnswersMap.forEach((Q, A) -> result.append(System.lineSeparator()).append(Q).append(System.lineSeparator()).append(A).append(System.lineSeparator()));

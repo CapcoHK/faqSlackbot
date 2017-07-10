@@ -27,7 +27,7 @@ import static com.capco.bots.phone.trie.Trie.removeLastChar;
  */
 public class PhoneDirectory implements IBotHandler {
 
-    private static Logger iLogger = LogManager.getLogger(PhoneDirectory.class);
+    private static Logger logger = LogManager.getLogger(PhoneDirectory.class);
 
     private List<PhoneEntry> directoryList;
 
@@ -84,15 +84,9 @@ public class PhoneDirectory implements IBotHandler {
         }
     }
 
-    void log(String msg) {
-        if (iLogger.isDebugEnabled())
-            iLogger.debug(msg);
-
-    }
-
     @Override
-    public String processMessage(String inputName) {
-        log("Received  " + inputName);
+    public String processMessage(String user, String inputName) {
+        logger.debug("User : {}, requested : [{}] for search", user, inputName);
         String response = "";
         String normalizedInputName = normalizeInput(inputName);
 
@@ -119,7 +113,7 @@ public class PhoneDirectory implements IBotHandler {
 
             //-- Normalize to lowercase
             String searchableName = requestedName.trim().toLowerCase();
-            log("Searchable Name  " + searchableName);
+            logger.debug("Searchable Name  {}", searchableName);
 
             //-- Try to look for Partial match. The input should partially match from the beginning of the cached entries
 
@@ -128,7 +122,7 @@ public class PhoneDirectory implements IBotHandler {
 
             //-- If there is no partial match
             if (result == null) {
-                log("Try Brute force as tries returned null");
+                logger.debug("Trying Brute force as tries returned null");
 
                 //-- Do a brute force search.
                 /*
@@ -159,7 +153,7 @@ public class PhoneDirectory implements IBotHandler {
                     //-- We now search by removing the last character of the first input word.
                     String newSearch = removeLastChar(searchableName);
 
-                    log("Trying with last character removed " + newSearch);
+                    logger.debug("Trying with last character removed {}", newSearch);
                     //-- See if Tries can find any match
                     result = trie.lookUpName(newSearch);
 
@@ -173,9 +167,9 @@ public class PhoneDirectory implements IBotHandler {
                     }
                 }
             } else {
-                log("Tries returned " + result.size() + " names");
+                logger.debug("Tries returned {} names", result.size());
                 for (PhoneEntry ent : result) {
-                    log(ent.getName());
+                    logger.debug(ent.getName());
                 }
 
                 if (result.size() == 1) {
