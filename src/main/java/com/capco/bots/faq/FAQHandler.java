@@ -59,7 +59,7 @@ public class FAQHandler implements IBotHandler {
             String queryableMessage = convertToQueryable(message);
             URL url = generateQueryURL(queryableMessage);
             result = queryFAQWebService(message, url);
-        } catch (IOException e) {
+        } catch (Exception e) {
             result = "Unable to process :" + message;
             logger.error("Error while processing message : {}", message, e);
         }
