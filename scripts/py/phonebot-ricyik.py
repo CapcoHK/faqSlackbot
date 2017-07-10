@@ -28,7 +28,7 @@ def handle_command(command, channel, message):
         log ('User: ' + message['user'] + ', Title: ' +  username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
 
         s.connect(("localhost", 54000))
-        s.send("phone " + command)
+        s.send(username + " phone " + command)
         buf = s.recv(2000)
         if len(buf) > 0:
             response = buf
