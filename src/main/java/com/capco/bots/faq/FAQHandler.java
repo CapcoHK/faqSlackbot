@@ -81,7 +81,7 @@ public class FAQHandler implements IBotHandler {
                 logger.debug("parsed reply from server : {}", parseMap);
                 if(parseMap.isEmpty()) {
                     logUnansweredQuestion(originalMessage);
-                    result.append("Couldn't find answer to your query. We have stored your query and look into it. Meanwhile feel free to contact admin if urgent...");
+                    result.append("Couldn't find answer to your query. We have stored your query and will look into it. Meanwhile feel free to contact admin if urgent...");
                 }else{
                     questionAnswersMap.putAll(parseMap);
                     questionAnswersMap.forEach((Q, A) -> result.append(System.lineSeparator()).append(Q).append(System.lineSeparator()).append(A).append(System.lineSeparator()));

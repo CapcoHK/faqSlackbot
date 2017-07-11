@@ -2,7 +2,8 @@ import os
 import time
 import socket
 from slackclient import SlackClient
-
+import logging
+from base64 import b64decode
 
 # starterbot's ID as an environment variable
 BOT_ID = "U561PE27Q"
@@ -12,8 +13,7 @@ AT_BOT = "<@" + BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
-#slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
-slack_client = SlackClient("xoxb-176057478262-TkcO4eizHQrbAdvlNgB1HYwM")
+slack_client = SlackClient(b64decode("eG94Yi0xNzYwNTc0NzgyNjItVGtjTzRlaXpIUXJiQWR2bE5nQjFIWXdN"))
 
 
 def handle_command(command, channel, message):
@@ -24,8 +24,8 @@ def handle_command(command, channel, message):
     """
     try:
         log (message)
-        username = message['subtitle']
-        log ('User: ' + message['user'] + ', Title: ' +  username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
+        username = message['user']
+        log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
 
         s.connect(("localhost", 54000))
         s.send(username + " phone " + command)
@@ -34,8 +34,10 @@ def handle_command(command, channel, message):
             response = buf
     except IOError:
         response = "Unable to connect to backend server.Please contact Capco Admin"
-    except :
+    except Exception as e:
+        logging.exception("Caught exception")
         response = "Looks like somethings is wrong with input. Can you please type in alpahabets only"
+
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
@@ -68,7 +70,7 @@ def parse_slack_output(slack_rtm_output):
     return None, None, None
 
 def log(message):
-    print datetime.today() + ":" + message
+    print str(datetime.today()) + "[INFO]  " + str(message)
 
 if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
