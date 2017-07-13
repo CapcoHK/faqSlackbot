@@ -37,17 +37,16 @@ public class FAQHandler implements IBotHandler {
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
     private final String unansweredQuestionFilePath;
-    private ExecutorService threadPool;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public FAQHandler(String unansweredQuestionFilePath) {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
+        logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
     }
 
     @Override
     public void init() {
         logger.debug("FAQHandler init");
-        logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
-        threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     @Override
@@ -73,7 +72,7 @@ public class FAQHandler implements IBotHandler {
                     try {
                         questionAnswerMap.putAll(f.get());
                     } catch (InterruptedException | ExecutionException e) {
-                        //do nothing
+                        logger.error("Exception while processing future ", e);
                     }
                 }
                 if (!questionAnswerMap.isEmpty()) {
