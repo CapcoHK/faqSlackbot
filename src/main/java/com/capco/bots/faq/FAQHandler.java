@@ -18,10 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,7 +60,7 @@ public class FAQHandler implements IBotHandler {
             if (questionAnswerMap.isEmpty()) {
                 logUnansweredQuestion(message);
                 result.append("Couldn't find a direct answer to your query. We have stored your query and will look into it. ");
-                doApproximateSearch(message, questionAnswerMap);
+                _doApproximateSearch(message, questionAnswerMap);
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -93,6 +90,32 @@ public class FAQHandler implements IBotHandler {
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Exception while processing future ", e);
             }
+        }
+    }
+
+    private Map<String, String> _queryFAQWebService(String queryString){
+        try {
+            return queryFAQWebService(queryString);
+        } catch (Exception e) {
+            logger.error("Exception while querying webservice", e);
+        }
+        return Collections.emptyMap();
+    }
+
+    private void _doApproximateSearch(String message, Map<String, String> questionAnswerMap) {
+        String[] queryTerms = message.split(" ");
+        CompletableFuture<Map<String, String>> cf = null;
+        for (String qt : queryTerms) {
+            if (cf == null) {
+                cf = CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt));
+            } else {
+                cf = cf.thenCombineAsync(CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt)), (m1, m2)-> {m1.putAll(m2);return m1;});
+            }
+        }
+        try {
+            questionAnswerMap.putAll(cf.get());
+        } catch (InterruptedException|ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
