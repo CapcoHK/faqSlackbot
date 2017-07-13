@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script is to start Phone bot engine
+# This script is to start FAQ bot engine
 
 BOTSPACE=botengine
 
