@@ -34,7 +34,6 @@ public class FAQHandler implements IBotHandler {
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
     private final String unansweredQuestionFilePath;
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public FAQHandler(String unansweredQuestionFilePath) {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
@@ -59,8 +58,8 @@ public class FAQHandler implements IBotHandler {
             Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
             if (questionAnswerMap.isEmpty()) {
                 logUnansweredQuestion(message);
-                result.append("Couldn't find a direct answer to your query. We have stored your query and will look into it. ");
-                _doApproximateSearch(message, questionAnswerMap);
+                result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
+                questionAnswerMap = doApproximateSearch(message);
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -78,21 +77,6 @@ public class FAQHandler implements IBotHandler {
         return result.toString();
     }
 
-    private void doApproximateSearch(String message, Map<String, String> questionAnswerMap) {
-        String[] queryTerms = message.split(" ");
-        List<Future<Map<String, String>>> futures = new ArrayList<>();
-        for (String qt : queryTerms) {
-            futures.add(threadPool.submit(() -> queryFAQWebService(qt)));
-        }
-        for (Future<Map<String, String>> f : futures) {
-            try {
-                questionAnswerMap.putAll(f.get());
-            } catch (InterruptedException | ExecutionException e) {
-                logger.error("Exception while processing future ", e);
-            }
-        }
-    }
-
     private Map<String, String> _queryFAQWebService(String queryString){
         try {
             return queryFAQWebService(queryString);
@@ -102,7 +86,7 @@ public class FAQHandler implements IBotHandler {
         return Collections.emptyMap();
     }
 
-    private void _doApproximateSearch(String message, Map<String, String> questionAnswerMap) {
+    private Map<String, String> doApproximateSearch(String message) {
         String[] queryTerms = message.split(" ");
         CompletableFuture<Map<String, String>> cf = null;
         for (String qt : queryTerms) {
@@ -113,10 +97,12 @@ public class FAQHandler implements IBotHandler {
             }
         }
         try {
-            questionAnswerMap.putAll(cf.get());
+            return cf.get();
         } catch (InterruptedException|ExecutionException e) {
+            logger.error("Exception while waiting for cumulative response", e);
             e.printStackTrace();
         }
+        return Collections.emptyMap();
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
@@ -126,7 +112,6 @@ public class FAQHandler implements IBotHandler {
         result = res.toString();
         return result;
     }
-
 
     private Map<String, String> queryFAQWebService(String queryableMessage) throws IOException {
         URL url = generateQueryURL(queryableMessage);
