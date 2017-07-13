@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.util.ExecutorServices;
-import sun.misc.OSEnvironment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,13 +18,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 /**
  * Handles FAQs
@@ -65,9 +65,17 @@ public class FAQHandler implements IBotHandler {
                 logUnansweredQuestion(message);
                 result.append("Couldn't find a direct answer to your query. We have stored your query and will look into it. ");
                 String[] queryTerms = message.split(" ");
-                Arrays.stream(queryTerms)
-                        .map(qt -> threadPool.submit(() -> queryFAQWebService(qt)))
-                        .forEach(f -> questionAnswerMap.putAll(getResultMap(f)));
+                List<Future<Map<String, String>>> futures = new ArrayList<>();
+                for (String qt : queryTerms) {
+                    futures.add(threadPool.submit(() -> queryFAQWebService(qt)));
+                }
+                for (Future<Map<String, String>> f : futures) {
+                    try {
+                        questionAnswerMap.putAll(f.get());
+                    } catch (InterruptedException | ExecutionException e) {
+                        //do nothing
+                    }
+                }
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -78,20 +86,11 @@ public class FAQHandler implements IBotHandler {
                 result.append(convertToString(questionAnswerMap));
             }
         } catch (Exception e) {
-            result.append("Unable to process :" + message);
+            result.append("Unable to process :").append(message);
             logger.error("Error while processing message : {}", message, e);
         }
         logger.debug("returning result : {}", result);
         return result.toString();
-    }
-
-    private Map<String, String> getResultMap(Future<Map<String, String>> future){
-        try {
-            return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Ignoring exception while processing result of future", e);
-        }
-        return Collections.emptyMap();
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
@@ -103,7 +102,7 @@ public class FAQHandler implements IBotHandler {
     }
 
 
-    private Map<String, String> queryFAQWebService(String queryableMessage){
+    private Map<String, String> queryFAQWebService(String queryableMessage) throws IOException {
         URL url = generateQueryURL(queryableMessage);
         HttpURLConnection conn = getHttpURLConnection(url);
         Map<String, String> questionAnswersMap = new HashMap<>();
@@ -124,60 +123,24 @@ public class FAQHandler implements IBotHandler {
         return questionAnswersMap;
     }
 
-    private String _queryFAQWebService(String originalMessage, URL url) throws IOException {
-        StringBuffer result = new StringBuffer();
-        HttpURLConnection conn = getHttpURLConnection(url);
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            String output;
-            Map<String, String> questionAnswersMap = new HashMap<>();
-            logger.debug("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                logger.debug("Received raw reply from Server : {}", output);
-                Map<String, String> parseMap = parseResponse(output);
-                logger.debug("parsed reply from server : {}", parseMap);
-                if(parseMap.isEmpty()) {
-                    logUnansweredQuestion(originalMessage);
-                    result.append("Couldn't find answer to your query. We have stored your query and will look into it. Meanwhile feel free to contact admin if urgent...");
-                }else{
-                    questionAnswersMap.putAll(parseMap);
-                    questionAnswersMap.forEach((Q, A) -> result.append(System.lineSeparator()).append(Q).append(System.lineSeparator()).append(A).append(System.lineSeparator()));
-                }
-                logger.debug("QuestionAnswersMap : {}", questionAnswersMap);
-            }
-        } finally {
-            conn.disconnect();
-        }
-        return result.toString();
-    }
+    private HttpURLConnection getHttpURLConnection(URL url) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Accept", "application/json");
 
-    private HttpURLConnection getHttpURLConnection(URL url) {
-        try {
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
-
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
-            }
-            return conn;
-        }catch(IOException e){
-            throw new RuntimeException("Unable to get HTTP connection", e);
+        if (conn.getResponseCode() != 200) {
+            throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
         }
+        return conn;
     }
 
     private void logUnansweredQuestion(String message) throws IOException {
         Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + " " + message).getBytes(), CREATE, APPEND);
     }
 
-    private URL generateQueryURL(String message) {
+    private URL generateQueryURL(String message) throws MalformedURLException {
         //TODO host and port should be extracted as part of properties file
-        URL url;
-        try {
-            url = new URL("http://localhost:8983/solr/answer?q=" + message + "%3F&defType=qa&qa=true&qa.qf=doctitle&wt=json");
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Unable to generate query URL ", e);
-        }
+        URL url= new URL("http://localhost:8983/solr/answer?q=" + message + "%3F&defType=qa&qa=true&qa.qf=doctitle&wt=json");
         logger.debug("Querying FAQ webservice using URL : {}", url);
         return url;
     }
