@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.util.ExecutorServices;
+import sun.misc.OSEnvironment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +20,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +37,7 @@ public class FAQHandler implements IBotHandler {
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
     private final String unansweredQuestionFilePath;
+    private ExecutorService threadPool;
 
     public FAQHandler(String unansweredQuestionFilePath) {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
@@ -44,6 +47,7 @@ public class FAQHandler implements IBotHandler {
     public void init() {
         logger.debug("FAQHandler init");
         logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
+        threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     @Override
@@ -60,14 +64,10 @@ public class FAQHandler implements IBotHandler {
             if (questionAnswerMap.isEmpty()) {
                 logUnansweredQuestion(message);
                 result.append("Couldn't find a direct answer to your query. We have stored your query and will look into it. ");
-                String[] splits = message.split(" ");
-                CompletableFuture<Map<String,String>> resultantFuture = CompletableFuture.completedFuture(questionAnswerMap);
-                for (String split : splits) {
-                    resultantFuture.thenCombineAsync(
-                            supplyAsync(() -> queryFAQWebService(split)).exceptionally(throwable -> Collections.emptyMap()),
-                            (map1, map2) -> {map1.putAll(map2); return map1;});
-                }
-                resultantFuture.join();
+                String[] queryTerms = message.split(" ");
+                Arrays.stream(queryTerms)
+                        .map(qt -> threadPool.submit(() -> queryFAQWebService(qt)))
+                        .forEach(f -> questionAnswerMap.putAll(getResultMap(f)));
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -83,6 +83,15 @@ public class FAQHandler implements IBotHandler {
         }
         logger.debug("returning result : {}", result);
         return result.toString();
+    }
+
+    private Map<String, String> getResultMap(Future<Map<String, String>> future){
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Ignoring exception while processing result of future", e);
+        }
+        return Collections.emptyMap();
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
