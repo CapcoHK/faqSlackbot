@@ -67,7 +67,7 @@ public class FAQHandler implements IBotHandler {
                             supplyAsync(() -> queryFAQWebService(split)).exceptionally(throwable -> Collections.emptyMap()),
                             (map1, map2) -> {map1.putAll(map2); return map1;});
                 }
-                resultantFuture.get();
+                resultantFuture.join();
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
