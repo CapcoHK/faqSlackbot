@@ -63,18 +63,7 @@ public class FAQHandler implements IBotHandler {
             if (questionAnswerMap.isEmpty()) {
                 logUnansweredQuestion(message);
                 result.append("Couldn't find a direct answer to your query. We have stored your query and will look into it. ");
-                String[] queryTerms = message.split(" ");
-                List<Future<Map<String, String>>> futures = new ArrayList<>();
-                for (String qt : queryTerms) {
-                    futures.add(threadPool.submit(() -> queryFAQWebService(qt)));
-                }
-                for (Future<Map<String, String>> f : futures) {
-                    try {
-                        questionAnswerMap.putAll(f.get());
-                    } catch (InterruptedException | ExecutionException e) {
-                        logger.error("Exception while processing future ", e);
-                    }
-                }
+                doApproximateSearch(message, questionAnswerMap);
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -90,6 +79,21 @@ public class FAQHandler implements IBotHandler {
         }
         logger.debug("returning result : {}", result);
         return result.toString();
+    }
+
+    private void doApproximateSearch(String message, Map<String, String> questionAnswerMap) {
+        String[] queryTerms = message.split(" ");
+        List<Future<Map<String, String>>> futures = new ArrayList<>();
+        for (String qt : queryTerms) {
+            futures.add(threadPool.submit(() -> queryFAQWebService(qt)));
+        }
+        for (Future<Map<String, String>> f : futures) {
+            try {
+                questionAnswerMap.putAll(f.get());
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("Exception while processing future ", e);
+            }
+        }
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
