@@ -43,6 +43,7 @@ public class FAQHandler implements IBotHandler {
             if(stopWordsFilePath!=null && !stopWordsFilePath.isEmpty()) {
                 logger.info("Reading stop words from path {}", stopWordsFilePath);
                 stopWords.addAll(Files.readAllLines(Paths.get(stopWordsFilePath)));
+                logger.info("These stop words will be ignored {}", stopWords);
             }
         } catch (IOException e) {
             logger.error("Unable to read stop words file at path {}", stopWordsFilePath, e);
@@ -98,6 +99,7 @@ public class FAQHandler implements IBotHandler {
 
     private Map<String, String> doApproximateSearch(String message) {
         Set<String> queryTerms = Arrays.stream(message.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet());
+        logger.info("Following query terms will be used for approx search {}", queryTerms);
         CompletableFuture<Map<String, String>> cf = null;
         for (String qt : queryTerms) {
             if (cf == null) {
