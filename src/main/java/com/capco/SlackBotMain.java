@@ -28,8 +28,6 @@ public class SlackBotMain implements ITcpConnectionHandler {
 
     private static Logger iLogger = LogManager.getLogger(SlackBotMain.class);
 
-    private Server iServer;
-
     private Map<String, IBotHandler> iHandlerMap;
 
     private ByteBufferPool iPool = new ByteBufferPool();
@@ -37,36 +35,47 @@ public class SlackBotMain implements ITcpConnectionHandler {
 
     public static void main(String[] args) {
 
-        if (args.length < 4) {
-            iLogger.info("Usage : hostname port path missing_que_file_name");
+        if (args.length < 3) {
+            iLogger.info("Usage : hostname port path");
             System.exit(0);
 
         }
-        Integer port = Integer.parseInt(args[1]);
         String hostname = args[0];
+        Integer port = Integer.parseInt(args[1]);
         String phonePath = args[2];
-        String missingQuestionsFile = args[3];
-        new SlackBotMain().start(hostname, port, phonePath, missingQuestionsFile);
+        String missingQuestionsFile = "missingQuestions.txt";
+        if (args.length > 3) {
+            if (args[3] != null && !args[3].isEmpty()) {
+                missingQuestionsFile = args[3];
+            }
+        }
+        String stopWordsFile = null;
+        if (args.length > 4) {
+            if (args[4] != null && !args[4].isEmpty()) {
+                stopWordsFile = args[4];
+            }
+        }
+        new SlackBotMain().start(hostname, port, phonePath, missingQuestionsFile, stopWordsFile);
     }
 
-    private void start(String hostname, Integer port, String phonePath, String missingQuestionsFile) {
+    private void start(String hostname, Integer port, String phonePath, String missingQuestionsFile, String stopWordsFile) {
         iHandlerMap = new HashMap<>();
-        initializeMap(phonePath, missingQuestionsFile);
+        initializeMap(phonePath, missingQuestionsFile, stopWordsFile);
         startServer(hostname, port);
     }
 
-    private void initializeMap(String filepath, String missingQuestionsFile) {
+    private void initializeMap(String filepath, String missingQuestionsFile, String stopWordsFilePath) {
         PhoneDirectory directory = new PhoneDirectory(filepath);
         iHandlerMap.put(directory.getId(), directory);
 
-        FAQHandler faqHandler = new FAQHandler(missingQuestionsFile);
+        FAQHandler faqHandler = new FAQHandler(missingQuestionsFile, stopWordsFilePath);
         iHandlerMap.put(faqHandler.getId(), faqHandler);
     }
 
 
     private void startServer(String hostname, Integer port) {
         try {
-            iServer = new Server(hostname, port);
+            Server iServer = new Server(hostname, port);
             iServer.init();
             iServer.addConnectionListner(this);
             iServer.waitForKey();

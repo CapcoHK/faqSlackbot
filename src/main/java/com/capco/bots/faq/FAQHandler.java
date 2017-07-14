@@ -34,15 +34,22 @@ public class FAQHandler implements IBotHandler {
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
     private final String unansweredQuestionFilePath;
+    private final Set<String> stopWords;
 
-    public FAQHandler(String unansweredQuestionFilePath) {
+    public FAQHandler(String unansweredQuestionFilePath, String stopWordsFilePath) {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
+        this.stopWords = new HashSet<>();
+        try {
+            stopWords.addAll(Files.readAllLines(Paths.get(stopWordsFilePath)));
+        } catch (IOException e) {
+            logger.error("Unable to read stop words file at path {}", stopWordsFilePath, e);
+        }
         logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
     }
 
     @Override
     public void init() {
-        logger.debug("FAQHandler init");
+
     }
 
     @Override
@@ -87,7 +94,7 @@ public class FAQHandler implements IBotHandler {
     }
 
     private Map<String, String> doApproximateSearch(String message) {
-        String[] queryTerms = message.split(" ");
+        Set<String> queryTerms = Arrays.stream(message.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet());
         CompletableFuture<Map<String, String>> cf = null;
         for (String qt : queryTerms) {
             if (cf == null) {
@@ -97,12 +104,26 @@ public class FAQHandler implements IBotHandler {
             }
         }
         try {
-            return cf.get();
+            Map<String, String> possibleMatches = cf.get();
+            return refineSearchResults(possibleMatches, queryTerms);
         } catch (InterruptedException|ExecutionException e) {
             logger.error("Exception while waiting for cumulative response", e);
             e.printStackTrace();
         }
         return Collections.emptyMap();
+    }
+
+    private Map<String, String> refineSearchResults(Map<String, String> possibleMatches, Set<String> queryTerms) {
+        if(possibleMatches.isEmpty()){
+            return possibleMatches;
+        }
+        Map<String, String> refinedSearchResult = new HashMap<>();
+        for (String que : possibleMatches.keySet()) {
+            if (Arrays.asList(que.split(" ")).containsAll(queryTerms)) {
+                refinedSearchResult.put(que, possibleMatches.get(que));
+            }
+        }
+        return refinedSearchResult.isEmpty() ? possibleMatches : refinedSearchResult;
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
@@ -146,7 +167,8 @@ public class FAQHandler implements IBotHandler {
     }
 
     private void logUnansweredQuestion(String message) throws IOException {
-        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + " " + message).getBytes(), CREATE, APPEND);
+        String searchedKeywords = String.join(",", Arrays.stream(message.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
+        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
     }
 
     private URL generateQueryURL(String message) throws MalformedURLException {
