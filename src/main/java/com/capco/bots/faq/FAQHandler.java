@@ -40,7 +40,10 @@ public class FAQHandler implements IBotHandler {
         this.unansweredQuestionFilePath = unansweredQuestionFilePath;
         this.stopWords = new HashSet<>();
         try {
-            stopWords.addAll(Files.readAllLines(Paths.get(stopWordsFilePath)));
+            if(stopWordsFilePath!=null && !stopWordsFilePath.isEmpty()) {
+                logger.info("Reading stop words from path {}", stopWordsFilePath);
+                stopWords.addAll(Files.readAllLines(Paths.get(stopWordsFilePath)));
+            }
         } catch (IOException e) {
             logger.error("Unable to read stop words file at path {}", stopWordsFilePath, e);
         }

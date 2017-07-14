@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.isIn;
  */
 @RunWith(BlockJUnit4ClassRunner.class)
 public class FAQHandlerTest {
-    private FAQHandler faqHandler = new FAQHandler(null);
+    private FAQHandler faqHandler = new FAQHandler(null, null);
 
     @Test
     public void WHEN_question_with_a_single_answer_is_parsed_THEN_it_is_correctly_parsed_into_key_value_pair(){
