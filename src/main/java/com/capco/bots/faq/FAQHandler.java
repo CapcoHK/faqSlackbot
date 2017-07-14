@@ -124,7 +124,8 @@ public class FAQHandler implements IBotHandler {
         }
         Map<String, String> refinedSearchResult = new HashMap<>();
         for (String que : possibleMatches.keySet()) {
-            if (Arrays.asList(que.split(" ")).containsAll(queryTerms)) {
+            String queLowerCase = que.toLowerCase();
+            if (Arrays.asList(queLowerCase.split(" ")).containsAll(queryTerms)) {
                 refinedSearchResult.put(que, possibleMatches.get(que));
             }
         }
