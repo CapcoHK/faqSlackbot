@@ -7,7 +7,7 @@ import logging
 from base64 import b64decode
 
 # starterbot's ID as an environment variable
-FAQ_BOT_ID = "U5WDXMJV7"
+FAQ_BOT_ID = "U6A8B2P8D"
 #os.environ.get("FAQ_BOT_ID")
 
 # constants
@@ -15,7 +15,7 @@ FAQ_AT_BOT = "<@" + FAQ_BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(b64decode("eG94Yi0yMDA0NzM3MzI5OTMtajJPVk4yS2xQWlBVYUdkR3VCWGp2bVQ0"))
+slack_client = SlackClient(b64decode("eG94Yi0yMTQyODMwOTEyODUtNXNVUTd0YVJVSmpHZ3pOcHRjZkZhSFJm"))
 
 def handle_command(command, channel, message):
     """

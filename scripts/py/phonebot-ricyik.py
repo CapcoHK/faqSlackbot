@@ -2,18 +2,19 @@ import os
 import time
 import socket
 from slackclient import SlackClient
+from datetime import datetime
 import logging
 from base64 import b64decode
 
 # starterbot's ID as an environment variable
-BOT_ID = "U561PE27Q"
+BOT_ID = "U6A4PQT8A"
 
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(b64decode("eG94Yi0xNzYwNTc0NzgyNjItVGtjTzRlaXpIUXJiQWR2bE5nQjFIWXdN"))
+slack_client = SlackClient(b64decode("eG94Yi0yMTQxNTk4NDMyODItRmd5WUNadWNGQlhLWXFzN1E0UzJ1ckxN"))
 
 
 def handle_command(command, channel, message):
@@ -27,6 +28,7 @@ def handle_command(command, channel, message):
         username = message['user']
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
 
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect(("localhost", 54000))
         s.send(username + " phone " + command)
         buf = s.recv(2000)
