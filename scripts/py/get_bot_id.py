@@ -1,10 +1,12 @@
 import os
 from slackclient import SlackClient
+from base64 import b64decode
 
 
 BOT_NAME = 'phonebot'
 
-slack_client = SlackClient('xoxb-214159843282-FgyYCZucFBXKYqs7Q4S2urLM')
+//Use slack token, encode it to b64 and then pass on to slack client
+slack_client = SlackClient(b64decode("eG94Yi0yMTQxNTk4NDMyODItR2czNnp2RnE5dWJvUUFVczhCN0k5U05L"))
 
 
 if __name__ == "__main__":

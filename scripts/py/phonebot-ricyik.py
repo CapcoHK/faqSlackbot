@@ -14,7 +14,7 @@ AT_BOT = "<@" + BOT_ID + ">"
 EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(b64decode("eG94Yi0yMTQxNTk4NDMyODItRmd5WUNadWNGQlhLWXFzN1E0UzJ1ckxN"))
+slack_client = SlackClient(b64decode("eG94Yi0yMTQxNTk4NDMyODItR2czNnp2RnE5dWJvUUFVczhCN0k5U05L"))
 
 
 def handle_command(command, channel, message):
