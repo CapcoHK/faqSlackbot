@@ -2,7 +2,7 @@ import os
 from slackclient import SlackClient
 from base64 import b64decode
 
-
+//Replace name of the bot you want to get id for
 BOT_NAME = 'phonebot'
 
 //Use slack token, encode it to b64 and then pass on to slack client
