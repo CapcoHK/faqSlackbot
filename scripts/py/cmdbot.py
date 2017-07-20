@@ -55,10 +55,9 @@ def parse_slack_output(slack_rtm_output):
         this parsing function returns None unless a message is
         directed at the Bot, based on its ID.
     """
-    if len(slack_rtm_output) > 0:
-        log (slack_rtm_output)
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
+        log (output_list)
         for output in output_list:
             #FAQ_AT_BOT in output['text']
             if output and 'user' in output and output['user'] == FAQ_BOT_ID:
