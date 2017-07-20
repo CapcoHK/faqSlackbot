@@ -1,0 +1,89 @@
+import os
+import time
+import socket
+from slackclient import SlackClient
+from datetime import datetime
+import logging
+from base64 import b64decode
+import subprocess
+
+# starterbot's ID as an environment variable
+FAQ_BOT_ID = "U6B6MMJMS"
+#os.environ.get("FAQ_BOT_ID")
+
+# constants
+FAQ_AT_BOT = "<@" + FAQ_BOT_ID + ">"
+EXAMPLE_COMMAND = "do"
+
+# instantiate Slack & Twilio clients
+slack_client = SlackClient(b64decode("eG94Yi0yMTUyMjU3MzI3NDAtMG96MDk3Skk5b2hsZFh0SXBIeGRPQWQ3"))
+DISABLED_COMMANDS = ['rm','mv','less','vi']
+def handle_command(command, channel, message):
+    """
+        Receives commands directed at the bot and determines if they
+        are valid commands. If so, then acts on the commands. If not,
+        returns back what it needs for clarification.
+    """
+    try:
+        log (message)
+        username = message['user']
+        log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
+        split_cmd = command.split(' ')
+        actual_cmd = split_cmd[0]
+        if actual_cmd in DISABLED_COMMANDS:
+            response = "This command is not allowed..."
+        elif actual_cmd == 'cd':
+            os.chdir(split_cmd[1])
+            response = subprocess.check_output('pwd')
+        else:
+            response = subprocess.check_output(split_cmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        response = e.output
+    except Exception as e:
+        logging.exception("Caught exception")
+        response = "Looks like somethings is wrong with input." + str(e)
+
+    slack_client.api_call("chat.postMessage", channel=channel,
+                          text=response, as_user=True)
+
+
+def parse_slack_output(slack_rtm_output):
+    """
+        The Slack Real Time Messaging API is an events firehose.
+        this parsing function returns None unless a message is
+        directed at the Bot, based on its ID.
+    """
+    if len(slack_rtm_output) > 0:
+        log (slack_rtm_output)
+    output_list = slack_rtm_output
+    if output_list and len(output_list) > 0:
+        for output in output_list:
+            #FAQ_AT_BOT in output['text']
+            if output and 'user' in output and output['user'] == FAQ_BOT_ID:
+                continue
+            if output and 'text' in output and ('channel' in output and output['channel'].startswith('D')):
+                # return text after the @ mention, whitespace removed
+                # .split(FAQ_AT_BOT)[1].strip()
+                return output['text'], \
+                       output['channel'], output
+            elif output and 'text' in output and (FAQ_BOT_ID in output['text']):
+                # return text after the @ mention, whitespace removed
+                return output['text'].split(FAQ_AT_BOT)[1].strip(), \
+                       output['channel'], output
+    return None, None, None
+
+def log(message):
+    print str(datetime.today()) + "[INFO]  " + str(message)
+
+if __name__ == "__main__":
+    READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
+    if slack_client.rtm_connect():
+        log ("Starter FAQ Bot connected and running!")
+        log (slack_client.api_call("im.list"))
+        while True:
+            command, channel, message = parse_slack_output(slack_client.rtm_read())
+            if command and channel and message:
+                handle_command(command, channel, message)
+            time.sleep(READ_WEBSOCKET_DELAY)
+    else:
+        log("Connection failed. Invalid Slack token or bot ID?")
