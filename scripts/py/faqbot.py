@@ -52,7 +52,8 @@ def parse_slack_output(slack_rtm_output):
         this parsing function returns None unless a message is
         directed at the Bot, based on its ID.
     """
-    log (slack_rtm_output)
+    if len(slack_rtm_output) > 0:
+        log (slack_rtm_output)
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
         for output in output_list:
