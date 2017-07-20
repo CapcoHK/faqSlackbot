@@ -31,7 +31,7 @@ def handle_command(command, channel, message):
         split_cmd = command.split(' ')
         actual_cmd = split_cmd[0]
         if actual_cmd not in ENABLED_COMMANDS:
-            response = "Cmdbot supports following commands (type \"command --help\" to learn more) \n" + (",".join(ENABLED_COMMANDS))
+            response = "Cmdbot supports following commands (type \"command --help\" to learn more) \n" + (", ".join(ENABLED_COMMANDS))
         elif actual_cmd == 'cd':
             os.chdir(split_cmd[1])
             response = subprocess.check_output('pwd')
