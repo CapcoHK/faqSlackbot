@@ -76,6 +76,7 @@ def log(message):
     print str(datetime.today()) + "[INFO]  " + str(message)
 
 if __name__ == "__main__":
+    os.chdir("..") # one level up
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect():
         log ("Starter FAQ Bot connected and running!")
