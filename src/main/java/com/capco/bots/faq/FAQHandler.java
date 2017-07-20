@@ -18,10 +18,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.capco.util.StringUtil.replacePunctuations;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
@@ -62,15 +65,15 @@ public class FAQHandler implements IBotHandler {
         if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
             return message.trim() + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
         }
-
+        String messageWithoutPunctuations = replacePunctuations(message);
         StringBuilder result = new StringBuilder();
         try {
-            String queryableMessage = convertToQueryable(message);
+            String queryableMessage = convertToQueryable(messageWithoutPunctuations);
             Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
             if (questionAnswerMap.isEmpty()) {
-                logUnansweredQuestion(message);
+                logUnansweredQuestion(message, messageWithoutPunctuations);
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
-                questionAnswerMap = doApproximateSearch(message);
+                questionAnswerMap = doApproximateSearch(messageWithoutPunctuations);
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -100,14 +103,8 @@ public class FAQHandler implements IBotHandler {
     private Map<String, String> doApproximateSearch(String message) {
         Set<String> queryTerms = Arrays.stream(message.split(" ")).map(String::toLowerCase).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet());
         logger.info("Following query terms will be used for approx search {}", queryTerms);
-        CompletableFuture<Map<String, String>> cf = null;
-        for (String qt : queryTerms) {
-            if (cf == null) {
-                cf = CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt));
-            } else {
-                cf = cf.thenCombineAsync(CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt)), (m1, m2)-> {m1.putAll(m2);return m1;});
-            }
-        }
+        CompletableFuture<Map<String, String>> cf = CompletableFuture.completedFuture(new ConcurrentHashMap<>());
+        queryTerms.forEach(qt -> cf.thenCombineAsync(CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt)), (m1, m2)-> {m1.putAll(m2); return m1;}));
         try {
             Map<String, String> possibleMatches = cf.get();
             return refineSearchResults(possibleMatches, queryTerms);
@@ -124,8 +121,20 @@ public class FAQHandler implements IBotHandler {
         }
         Map<String, String> refinedSearchResult = new HashMap<>();
         for (String que : possibleMatches.keySet()) {
-            String queLowerCase = que.toLowerCase();
-            if (Arrays.asList(queLowerCase.split(" ")).containsAll(queryTerms)) {
+            String queLowerCase = replacePunctuations(que.toLowerCase());
+            String[] queWords = queLowerCase.split(" ");
+            boolean allQTFound = true;
+            for (String queryTerm : queryTerms) {
+                boolean thisQTFound = false;
+                for (String queWord : queWords) {
+                    if (queWord.startsWith(queryTerm)) {
+                        thisQTFound = true;
+                        break;
+                    }
+                }
+                allQTFound = allQTFound && thisQTFound;
+            }
+            if (allQTFound) {
                 refinedSearchResult.put(que, possibleMatches.get(que));
             }
         }
@@ -133,11 +142,9 @@ public class FAQHandler implements IBotHandler {
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
-        String result;
         StringBuilder res = new StringBuilder();
         questionAnswerMap.forEach((Q, A) -> res.append(System.lineSeparator()).append(Q).append(System.lineSeparator()).append(A).append(System.lineSeparator()));
-        result = res.toString();
-        return result;
+        return res.toString();
     }
 
     private Map<String, String> queryFAQWebService(String queryableMessage) throws IOException {
@@ -172,8 +179,8 @@ public class FAQHandler implements IBotHandler {
         return conn;
     }
 
-    private void logUnansweredQuestion(String message) throws IOException {
-        String searchedKeywords = String.join(",", Arrays.stream(message.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
+    private void logUnansweredQuestion(String message, String messageWithoutPuncuations) throws IOException {
+        String searchedKeywords = String.join(",", Arrays.stream(messageWithoutPuncuations.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
         Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
     }
 
@@ -185,8 +192,7 @@ public class FAQHandler implements IBotHandler {
     }
 
     private String convertToQueryable(String message) {
-        message = message.replaceAll(" ", "+");
-        return message;
+        return message.replaceAll(" ", "+");
     }
 
     Map<String, String> parseResponse(String response) {
