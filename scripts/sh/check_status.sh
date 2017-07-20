@@ -26,7 +26,7 @@ check_status()
 
 check_status py-phonebot phonebot ""
 check_status java-phonebot FaqBot.jar 54000
-check_status solr-webservice solr-qa ""
+check_status solr-webservice start.jar ""
 check_status py-faqbot faqbot ""
 check_status java-faqbot FaqBot.jar 54001
 check_status py-cmdbot cmdbot ""

@@ -17,7 +17,7 @@ EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(b64decode("eG94Yi0yMTUyMjU3MzI3NDAtMG96MDk3Skk5b2hsZFh0SXBIeGRPQWQ3"))
-ENABLED_COMMANDS = ['crontab','sh','cat','find','grep','ps','date','history','top','ls','cd','pwd','df','du']
+ENABLED_COMMANDS = ['crontab','sh','cat','find','grep','ps','date','ls','cd','pwd','df','du']
 def handle_command(command, channel, message):
     """
         Receives commands directed at the bot and determines if they
