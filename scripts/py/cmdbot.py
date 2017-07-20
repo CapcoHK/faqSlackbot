@@ -37,6 +37,8 @@ def handle_command(command, channel, message):
             response = subprocess.check_output('pwd')
         else:
             response = subprocess.check_output(split_cmd, stderr=subprocess.STDOUT)
+            if len(response)==0:
+                response = "Command executed successfully without result"
     except subprocess.CalledProcessError as e:
         response = e.output
     except Exception as e:
