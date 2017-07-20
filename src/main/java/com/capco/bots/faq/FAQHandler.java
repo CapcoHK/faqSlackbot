@@ -19,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,8 +102,14 @@ public class FAQHandler implements IBotHandler {
     private Map<String, String> doApproximateSearch(String message) {
         Set<String> queryTerms = Arrays.stream(message.split(" ")).map(String::toLowerCase).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet());
         logger.info("Following query terms will be used for approx search {}", queryTerms);
-        CompletableFuture<Map<String, String>> cf = CompletableFuture.completedFuture(new ConcurrentHashMap<>());
-        queryTerms.forEach(qt -> cf.thenCombineAsync(CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt)), (m1, m2)-> {m1.putAll(m2); return m1;}));
+        CompletableFuture<Map<String, String>> cf = null;
+        for (String qt : queryTerms) {
+            if (cf == null) {
+                cf = CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt));
+            } else {
+                cf = cf.thenCombineAsync(CompletableFuture.supplyAsync(() -> _queryFAQWebService(qt)), (m1, m2)-> {m1.putAll(m2);return m1;});
+            }
+        }
         try {
             Map<String, String> possibleMatches = cf.get();
             return refineSearchResults(possibleMatches, queryTerms);
