@@ -3,10 +3,9 @@ from os.path import basename
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formatdate
+from email.utils import COMMASPACE, formatdate
 
-EMAIL = "capco.hk.it@capco.com"
-PWD = ""
+# please note that password for the email is not stored, please read KT document for credentials
 
 def send_mail(send_from, send_to, subject, text, server, port, attachment):
     msg = MIMEMultipart()
@@ -27,9 +26,9 @@ def send_mail(send_from, send_to, subject, text, server, port, attachment):
 
     smtp = smtplib.SMTP(server, port)
     smtp.starttls()
-    smtp.login(EMAIL, PWD)
+    smtp.login("capco.hk.it@gmail.com","") #Read the KT document for the password
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
 if __name__ == "__main__":
-    send_mail("capco.hk.it@capco.com", "FAQ_BOT_UNANSWERED_QUESTIONS", "Unanswered questions", "Hi,\nHere is a list of all unanswered questions.",  "smtp.office365.com", 587, "botengine/missingQuestions.txt")
+    send_mail("capco.hk.IT@gmail.com", "capco.hk.it@capco.com", "Unanswered questions", "Hi,\nHere is a list of all unanswered questions.",  "smtp.gmail.com",587 , "botengine/missingQuestions.txt")
