@@ -132,7 +132,7 @@ public class FAQHandler implements IBotHandler {
             for (String queryTerm : queryTerms) {
                 boolean thisQTFound = false;
                 for (String queWord : queWords) {
-                    if (queWord.startsWith(queryTerm)) {
+                    if (queWord.startsWith(queryTerm) || queryTerm.startsWith(queWord)) {
                         thisQTFound = true;
                         break;
                     }
