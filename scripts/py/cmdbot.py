@@ -17,7 +17,7 @@ EXAMPLE_COMMAND = "do"
 
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(b64decode("eG94Yi0yMTUyMjU3MzI3NDAtMG96MDk3Skk5b2hsZFh0SXBIeGRPQWQ3"))
-DISABLED_COMMANDS = ['rm','mv','less','vi']
+ENABLED_COMMANDS = ['crontab','sh','cat','find','grep','ps','date','history','top','ls','cd','pwd','df','du']
 def handle_command(command, channel, message):
     """
         Receives commands directed at the bot and determines if they
@@ -30,8 +30,8 @@ def handle_command(command, channel, message):
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
         split_cmd = command.split(' ')
         actual_cmd = split_cmd[0]
-        if actual_cmd in DISABLED_COMMANDS:
-            response = "This command is not allowed..."
+        if actual_cmd not in ENABLED_COMMANDS:
+            response = "Cmdbot supports below commands (type \"command --help\" to know learn more) \n" + ("\n".join(ENABLED_COMMANDS))
         elif actual_cmd == 'cd':
             os.chdir(split_cmd[1])
             response = subprocess.check_output('pwd')
