@@ -1,9 +1,11 @@
-0 05 * * * ~/Downloads/slack/workspace/stopBots.sh
-0 05 * * * ~/Downloads/slack/workspace/stopFAQBots.sh
+0 05 * * * ~/Downloads/slack/workspace/stop_cmdbot.sh
+0 05 * * * ~/Downloads/slack/workspace/stop_phonebot.sh
+0 05 * * * ~/Downloads/slack/workspace/stop_faqbot.sh
 0 05 * * * ~/Downloads/slack/taming-text/book/bin/stop-solr.sh
 
-1 05 * * * ~/Downloads/slack/workspace/startBots.sh
-1 05 * * * ~/Downloads/slack/workspace/startFAQBots.sh
+1 05 * * * ~/Downloads/slack/workspace/start_cmdbot.sh
+1 05 * * * ~/Downloads/slack/workspace/start_phonebot.sh
+1 05 * * * ~/Downloads/slack/workspace/start_faqbot.sh
 
 1 05 * * * ~/Downloads/slack/taming-text/faqsetup/extract_setup.sh
 2 05 * * * ~/Downloads/slack/taming-text/book/bin/start-faq-ws.sh
