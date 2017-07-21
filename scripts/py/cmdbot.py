@@ -28,6 +28,8 @@ def handle_command(command, channel, message):
         log (message)
         username = message['user']
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
+        command = command.replace('~', os.path.expanduser('~'))
+        log ('Command after replacing ~ : '+command)
         split_cmd = command.split(' ')
         actual_cmd = split_cmd[0]
         if actual_cmd not in ENABLED_COMMANDS:
