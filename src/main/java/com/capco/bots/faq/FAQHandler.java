@@ -62,7 +62,7 @@ public class FAQHandler implements IBotHandler {
     public String processMessage(String user, String message) {
         logger.debug("User : {}, message : {}", user, message);
         if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
-            return message.trim() + user + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
+            return message.trim() + " " + user + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
         }
         String messageWithoutPunctuations = replacePunctuations(message);
         StringBuilder result = new StringBuilder();

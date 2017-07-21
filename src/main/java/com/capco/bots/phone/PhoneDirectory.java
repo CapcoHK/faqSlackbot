@@ -97,7 +97,7 @@ public class PhoneDirectory implements IBotHandler {
         try {
             //-- Welcome Message
             if (normalizedInputName.trim().toLowerCase().equals("hi") || normalizedInputName.trim().toLowerCase().equals("hello")) {
-                return normalizedInputName.trim() + user + "! I am PhoneBot and can help you find Capco phone numbers. Please tell me the name or partial name you are looking for. ";
+                return normalizedInputName.trim() + " " + user + "! I am PhoneBot and can help you find Capco phone numbers. Please tell me the name or partial name you are looking for. ";
             }
             List<String> nameList = Arrays.stream(normalizedInputName.split(" ")).collect(Collectors.toList());
 
