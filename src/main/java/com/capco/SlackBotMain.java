@@ -8,6 +8,8 @@ import com.capco.bots.phone.PhoneDirectory;
 import com.capco.pool.ByteBufferPool;
 import com.capco.server.ITcpConnectionHandler;
 import com.capco.server.Server;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,10 +29,12 @@ import java.util.Map;
 public class SlackBotMain implements ITcpConnectionHandler {
 
     private static Logger iLogger = LogManager.getLogger(SlackBotMain.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private Map<String, IBotHandler> iHandlerMap;
 
     private ByteBufferPool iPool = new ByteBufferPool();
+
 
 
     public static void main(String[] args) {
@@ -94,13 +98,15 @@ public class SlackBotMain implements ITcpConnectionHandler {
             client.close();
         }
         String input = new String(Arrays.copyOfRange(byteBuffer.array(), 0, byteBuffer.position()));
-        String[] splits = input.split(" ");
-        String response = "Unable to identify the command " + input + " . Please type in phone name ";
-        if (splits.length > 2) {
-            String user = splits[0];
-            String command = splits[1];
-            String data = String.join(" ", Arrays.copyOfRange(splits, 2, splits.length));
-            switch (IBotsEnum.valueOf(command.trim().toUpperCase())) {
+        Map<String, String> request = objectMapper.readValue(input, new TypeReference<Map<String, String>>(){});
+        String response;
+        if (request.size() != 3) {
+            response = "Missing inputs, expected : 'username', 'botname', 'command', found : " + request;
+        } else {
+            String user = request.get("username");
+            String botname = request.get("botname");
+            String data = request.get("command");
+            switch (IBotsEnum.valueOf(botname.trim().toUpperCase())) {
                 case PHONE: {
                     response = iHandlerMap.get(IBotsEnum.PHONE.toString()).processMessage(user, data);
                     break;
@@ -110,6 +116,7 @@ public class SlackBotMain implements ITcpConnectionHandler {
                     break;
                 }
                 default:
+                    response = "Unknown bot";
             }
         }
         ByteBuffer buffer = ByteBuffer.wrap(response.getBytes());

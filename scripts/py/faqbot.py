@@ -42,10 +42,14 @@ def handle_command(command, channel, message):
         log (message)
         username = get_username(message)
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
+        request_dict = {}
+        request_dict['username'] = username
+        request_dict['botname'] = 'faq'
+        request_dict['command'] = command
 
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect(("localhost", 54001))
-        s.send(username + " faq " + command)
+        s.send(json.dumps(request_dict))
         buf = s.recv(2000)
         if len(buf) > 0:
             response = buf

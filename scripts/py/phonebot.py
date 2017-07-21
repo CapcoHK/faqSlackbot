@@ -5,6 +5,7 @@ from slackclient import SlackClient
 from datetime import datetime
 import logging
 from base64 import b64decode
+import json
 
 # starterbot's ID as an environment variable
 BOT_ID = "U6A4PQT8A"
@@ -30,8 +31,6 @@ def get_username(message):
     USER_CACHE[user_id] = resolved_name
     return resolved_name
 
-
-
 def handle_command(command, channel, message):
     """
         Receives commands directed at the bot and determines if they
@@ -42,10 +41,14 @@ def handle_command(command, channel, message):
         log (message)
         username = get_username(message)
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
+        request_dict = {}
+        request_dict['username'] = username
+        request_dict['botname'] = 'phone'
+        request_dict['command'] = command
 
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         s.connect(("localhost", 54000))
-        s.send(username + " phone " + command)
+        s.send(json.dumps(request_dict))
         buf = s.recv(2000)
         if len(buf) > 0:
             response = buf
