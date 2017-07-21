@@ -37,6 +37,7 @@ def handle_command(command, channel, message):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
+    response = "None"
     try:
         log (message)
         username = get_username(message)
