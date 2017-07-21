@@ -18,6 +18,22 @@ EXAMPLE_COMMAND = "do"
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(b64decode("eG94Yi0yMTUyMjU3MzI3NDAtMG96MDk3Skk5b2hsZFh0SXBIeGRPQWQ3"))
 ENABLED_COMMANDS = ['crontab','sh','cat','find','grep','ps','date','ls','cd','pwd','df','du']
+USER_CACHE = {}
+
+def get_username(message):
+    user_id = message['user']
+    cached_user_name = USER_CACHE.get(user_id)
+    if cached_user_name:
+        return cached_user_name
+    user_info_dict = slack_client.api_call("users.info",user=user_id)
+    log(user_info_dict)
+    real_name = user_info_dict['user']['profile']['real_name']
+    user_name = user_info_dict['user']['name']
+    resolved_name = real_name if len(real_name)>0 else user_name
+    USER_CACHE[user_id] = resolved_name
+    return resolved_name
+
+
 def handle_command(command, channel, message):
     """
         Receives commands directed at the bot and determines if they
@@ -26,7 +42,7 @@ def handle_command(command, channel, message):
     """
     try:
         log (message)
-        username = message['user']
+        username = get_username(message)
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
         command = command.replace('~', os.path.expanduser('~'))
         log ('Command after replacing ~ : '+command)
