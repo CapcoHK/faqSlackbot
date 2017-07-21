@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-python ~/Downloads/slack/workspace/send_mail.py
+cd ~/Downloads/slack/workspace
+python send_mail.py
