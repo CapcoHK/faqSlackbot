@@ -70,7 +70,7 @@ public class FAQHandler implements IBotHandler {
             String queryableMessage = convertToQueryable(messageWithoutPunctuations);
             Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
             if (questionAnswerMap.isEmpty()) {
-                logUnansweredQuestion(message, messageWithoutPunctuations);
+                logUnansweredQuestion(user, message, messageWithoutPunctuations);
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
                 questionAnswerMap = doApproximateSearch(messageWithoutPunctuations);
                 if (!questionAnswerMap.isEmpty()) {
@@ -184,9 +184,9 @@ public class FAQHandler implements IBotHandler {
         return conn;
     }
 
-    private void logUnansweredQuestion(String message, String messageWithoutPuncuations) throws IOException {
+    private void logUnansweredQuestion(String user, String message, String messageWithoutPuncuations) throws IOException {
         String searchedKeywords = String.join(",", Arrays.stream(messageWithoutPuncuations.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
-        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
+        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" +user + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
     }
 
     private URL generateQueryURL(String message) throws MalformedURLException {
