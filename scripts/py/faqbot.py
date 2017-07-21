@@ -5,6 +5,7 @@ from slackclient import SlackClient
 from datetime import datetime
 import logging
 from base64 import b64decode
+import json
 
 # starterbot's ID as an environment variable
 FAQ_BOT_ID = "U6A8B2P8D"
