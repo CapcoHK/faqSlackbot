@@ -34,6 +34,12 @@ def get_username(message):
     return resolved_name
 
 
+def preprocess(command):
+    command = command.replace('~', os.path.expanduser('~'))
+    if (command.endswith('.sh') and not command.startswith('sh ')):
+        command = 'sh ' + command
+    return command
+
 def handle_command(command, channel, message):
     """
         Receives commands directed at the bot and determines if they
@@ -45,8 +51,8 @@ def handle_command(command, channel, message):
         log (message)
         username = get_username(message)
         log ('User: ' + username + ', Message Channel ID: ' + message['channel']  + ': ' + command)
-        command = command.replace('~', os.path.expanduser('~'))
-        log ('Command after replacing ~ : '+command)
+        command = preprocess(command)
+        log ('Preprocessed command : ' + command)
         split_cmd = command.split(' ')
         actual_cmd = split_cmd[0]
         if actual_cmd not in ENABLED_COMMANDS:
