@@ -5,7 +5,7 @@ package com.capco.bots;
  */
 public interface IBotHandler {
     void init();
-//Testing By AW
+
     String processMessage(String user, String message);
 
     String getId();

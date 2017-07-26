@@ -108,7 +108,7 @@ def move_file(command):
             existing_file_renamed = True
         os.rename(downloaded_file, existing_file_path)
         log("Moving %s to %s"%(downloaded_file, existing_file_path))
-        return "%s was successfully moved to %s" % (file_name, SUPPORTED_FILES[file_name])
+        return "%s was successfully moved to %s. \n(The previous file was backedup as : %s)" % (file_name, SUPPORTED_FILES[file_name], backup_file_path)
     except Exception as e:
         logging.exception("Caught exception")
         if existing_file_renamed:

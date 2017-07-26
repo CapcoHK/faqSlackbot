@@ -10,4 +10,6 @@
 1 05 * * * ~/Downloads/slack/taming-text/faqsetup/extract_setup.sh
 2 05 * * * ~/Downloads/slack/taming-text/book/bin/start-faq-ws.sh
 
+6 05 * * * ~/Downloads/slack/check_status.sh
+
 0 09 * * 5 ~/Downloads/slack/workspace/send_mail.sh
