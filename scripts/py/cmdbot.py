@@ -143,7 +143,7 @@ def handle_command(command, channel, message):
         else:
             response = subprocess.check_output(split_cmd, stderr=subprocess.STDOUT)
             if len(response) == 0:
-                response = "Command executed successfully without result"
+                response = "Command executed successfully..."
     except subprocess.CalledProcessError as e:
         response = e.output
     except Exception as e:

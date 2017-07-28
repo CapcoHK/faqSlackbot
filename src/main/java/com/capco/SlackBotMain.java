@@ -47,10 +47,10 @@ public class SlackBotMain implements ITcpConnectionHandler {
         String hostname = args[0];
         Integer port = Integer.parseInt(args[1]);
         String phonePath = args[2];
-        String missingQuestionsFile = "missingQuestions.txt";
+        String questionStatsFilePath = "questionStats.xlsx";
         if (args.length > 3) {
             if (args[3] != null && !args[3].isEmpty()) {
-                missingQuestionsFile = args[3];
+                questionStatsFilePath = args[3];
             }
         }
         String stopWordsFile = null;
@@ -59,20 +59,20 @@ public class SlackBotMain implements ITcpConnectionHandler {
                 stopWordsFile = args[4];
             }
         }
-        new SlackBotMain().start(hostname, port, phonePath, missingQuestionsFile, stopWordsFile);
+        new SlackBotMain().start(hostname, port, phonePath, questionStatsFilePath, stopWordsFile);
     }
 
-    private void start(String hostname, Integer port, String phonePath, String missingQuestionsFile, String stopWordsFile) {
+    private void start(String hostname, Integer port, String phonePath, String questionStatsFilePath, String stopWordsFile) {
         iHandlerMap = new HashMap<>();
-        initializeMap(phonePath, missingQuestionsFile, stopWordsFile);
+        initializeMap(phonePath, questionStatsFilePath, stopWordsFile);
         startServer(hostname, port);
     }
 
-    private void initializeMap(String filepath, String missingQuestionsFile, String stopWordsFilePath) {
+    private void initializeMap(String filepath, String questionStatsFilePath, String stopWordsFilePath) {
         PhoneDirectory directory = new PhoneDirectory(filepath);
         iHandlerMap.put(directory.getId(), directory);
 
-        FAQHandler faqHandler = new FAQHandler(missingQuestionsFile, stopWordsFilePath);
+        FAQHandler faqHandler = new FAQHandler(questionStatsFilePath, stopWordsFilePath);
         iHandlerMap.put(faqHandler.getId(), faqHandler);
     }
 

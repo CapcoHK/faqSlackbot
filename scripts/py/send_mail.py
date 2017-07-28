@@ -1,11 +1,13 @@
 import smtplib
+import os
 from os.path import basename
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import COMMASPACE, formatdate
+from email.utils import formatdate
 
 # please note that password for the email is not stored, please read KT document for credentials
+
 
 def send_mail(send_from, send_to, subject, text, server, port, attachment):
     msg = MIMEMultipart()
@@ -26,9 +28,15 @@ def send_mail(send_from, send_to, subject, text, server, port, attachment):
 
     smtp = smtplib.SMTP(server, port)
     smtp.starttls()
-    smtp.login("capco.hk.it@gmail.com","") #Read the KT document for the password
+    smtp.login("capco.hk.it@gmail.com", "")  # Read the KT document for the password
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
 if __name__ == "__main__":
-    send_mail("capco.hk.IT@gmail.com", "capco.hk.it@capco.com", "Unanswered questions", "Hi,\nHere is a list of all unanswered questions.",  "smtp.gmail.com",587 , "botengine/missingQuestions.txt")
+    from_address = "capco.hk.IT@gmail.com"
+    to_address = "capco.hk.it@capco.com"
+    subject = "Question stats this week"
+    mail_content = "Hi,\nHere is a list of all unanswered questions."
+    question_stats_path = "botengine/questionStats.xlsx"
+    send_mail(from_address, to_address, subject, mail_content, "smtp.gmail.com", 587, question_stats_path)
+    os.remove(question_stats_path)

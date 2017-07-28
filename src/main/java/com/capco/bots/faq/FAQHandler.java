@@ -3,11 +3,13 @@ package com.capco.bots.faq;
 import com.capco.bots.IBotHandler;
 import com.capco.bots.IBotsEnum;
 import com.capco.bots.faq.data.Docs;
+import com.capco.bots.faq.data.QuestionStatsWriter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,8 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.capco.util.StringUtil.replacePunctuations;
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
 
 /**
  * Handles FAQs
@@ -35,11 +35,11 @@ public class FAQHandler implements IBotHandler {
 
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
-    private final String unansweredQuestionFilePath;
+    private final String questionStatFilePath;
     private final Set<String> stopWords;
 
-    public FAQHandler(String unansweredQuestionFilePath, String stopWordsFilePath) {
-        this.unansweredQuestionFilePath = unansweredQuestionFilePath;
+    public FAQHandler(String questionStatFilePath, String stopWordsFilePath) {
+        this.questionStatFilePath = questionStatFilePath;
         this.stopWords = new HashSet<>();
         try {
             if(stopWordsFilePath!=null && !stopWordsFilePath.isEmpty()) {
@@ -50,7 +50,7 @@ public class FAQHandler implements IBotHandler {
         } catch (IOException e) {
             logger.error("Unable to read stop words file at path {}", stopWordsFilePath, e);
         }
-        logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
+        logger.debug("Unanswered questions will be logged to : {}", questionStatFilePath);
     }
 
     @Override
@@ -66,11 +66,11 @@ public class FAQHandler implements IBotHandler {
         }
         String messageWithoutPunctuations = replacePunctuations(message);
         StringBuilder result = new StringBuilder();
+        Map<String, String> questionAnswerMap = Collections.emptyMap();
         try {
             String queryableMessage = convertToQueryable(messageWithoutPunctuations);
-            Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
+            questionAnswerMap = queryFAQWebService(queryableMessage);
             if (questionAnswerMap.isEmpty()) {
-                logUnansweredQuestion(user, message, messageWithoutPunctuations);
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
                 questionAnswerMap = doApproximateSearch(messageWithoutPunctuations);
                 if (!questionAnswerMap.isEmpty()) {
@@ -86,6 +86,14 @@ public class FAQHandler implements IBotHandler {
             result.append("Unable to process :").append(message);
             logger.error("Error while processing message : {}", message, e);
         }
+
+        try {
+            new QuestionStatsWriter(user, message, questionAnswerMap, stopWords, questionStatFilePath).write();
+        } catch (IOException | InvalidFormatException e) {
+            logger.error("Unable to write Question stats to excel file {}", questionStatFilePath, e);
+            result.append("\n(There was a problem writing unanswered question to file, please contact admin)");
+        }
+
         logger.debug("returning result : {}", result);
         return result.toString();
     }
@@ -184,9 +192,8 @@ public class FAQHandler implements IBotHandler {
         return conn;
     }
 
-    private void logUnansweredQuestion(String user, String message, String messageWithoutPuncuations) throws IOException {
-        String searchedKeywords = String.join(",", Arrays.stream(messageWithoutPuncuations.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
-        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" +user + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
+    private void logQuestionStatistics(String user, String originalQuestion, String questionWithoutPuncuations, Map<String, String> finalResponse){
+
     }
 
     private URL generateQueryURL(String message) throws MalformedURLException {
