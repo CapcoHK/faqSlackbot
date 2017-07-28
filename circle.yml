@@ -6,3 +6,5 @@ test:
     - mv target/*.jar $CIRCLE_ARTIFACTS/jars
     - mv scripts/py/*.* $CIRCLE_ARTIFACTS/py
     - mv scripts/sh/*.* $CIRCLE_ARTIFACTS/sh
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
