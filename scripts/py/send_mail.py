@@ -35,8 +35,8 @@ def send_mail(send_from, send_to, subject, text, server, port, attachment):
 if __name__ == "__main__":
     from_address = "capco.hk.IT@gmail.com"
     to_address = "capco.hk.it@capco.com"
-    subject = "Question stats this week"
-    mail_content = "Hi,\nHere is a list of all unanswered questions."
+    subject = "FAQ-Bot : Question statistics this week"
+    mail_content = "Hi,\nPlease find attached various statistics related to questions asked"
     question_stats_path = "botengine/questionStats.xlsx"
     send_mail(from_address, to_address, subject, mail_content, "smtp.gmail.com", 587, question_stats_path)
     os.remove(question_stats_path)
