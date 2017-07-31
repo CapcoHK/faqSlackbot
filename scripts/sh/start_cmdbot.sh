@@ -6,7 +6,12 @@ BOTSPACE=botengine
 
 cd ~/Downloads/slack/workspace
 
-echo "Starting Command Bot"
+if ps ax | grep -v grep | grep "cmdbot.py" > /dev/null
+then
+        echo "Command bot already running..."
+else
+        echo "Starting Command Bot"
+        python cmdbot.py &> ~/Downloads/slack/logs/cmdbot.log &
+fi
 
-python cmdbot.py &> ~/Downloads/slack/logs/cmdbot.log &
 cd ~
