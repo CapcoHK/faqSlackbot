@@ -4,6 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.NotOfficeXmlFileException;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -121,10 +124,15 @@ public class QuestionStatsWriter {
         private final String sheetName;
         private final XSSFWorkbook workbook;
         private final List<T> dataRows = new ArrayList<>();
+        private final CellStyle headerStyle;
+        private final int zoomPercent = 90;
 
         public SheetWriter(String sheetName, XSSFWorkbook workbook) {
             this.sheetName = sheetName;
             this.workbook = workbook;
+            this.headerStyle = workbook.createCellStyle();
+            this.headerStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            this.headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         }
 
         public void addRow(T row) {
@@ -138,8 +146,21 @@ public class QuestionStatsWriter {
             }
 
             XSSFSheet sheet = getOrCreate(sheetName);
+            setZoom(sheet);
             writeHeaderRow(sheet);
             writeDataRows(sheet);
+            autoSizeColumns(sheet);
+        }
+
+        private void setZoom(XSSFSheet sheet) {
+            sheet.setZoom(zoomPercent);
+        }
+
+        private void autoSizeColumns(XSSFSheet sheet) {
+            XSSFRow row = sheet.getRow(0);
+            for(int i = 0; i < row.getLastCellNum(); i++){
+                sheet.autoSizeColumn(i);
+            }
         }
 
         private void writeDataRows(XSSFSheet sheet) {
@@ -165,6 +186,7 @@ public class QuestionStatsWriter {
             for (String headerCol : dataRow.getHeaders()) {
                 XSSFCell cell = row.getCell(colIndex++, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellValue(headerCol);
+                cell.setCellStyle(headerStyle);
             }
         }
 
