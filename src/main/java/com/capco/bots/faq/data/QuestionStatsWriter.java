@@ -106,7 +106,13 @@ public class QuestionStatsWriter {
         SheetWriter<MultipleAnswersToQuestion> writer = new SheetWriter<>("Multiple answers", workbook);
         if (results.size() > 1) {
             logger.info("Writing question with {} answers to file : {}", results.size(), originalQue);
-            writer.addRow(new MultipleAnswersToQuestion(date, user, originalQue, results.size()));
+            String searchedKeywords = String.join(",",
+                    stream(replacePunctuations(originalQue)
+                            .split(" "))
+                            .map(String::toLowerCase)
+                            .filter(s -> !stopWords.contains(s))
+                            .collect(Collectors.toSet()));
+            writer.addRow(new MultipleAnswersToQuestion(date, user, originalQue, searchedKeywords, results.size()));
         }
         return writer;
     }
@@ -115,7 +121,13 @@ public class QuestionStatsWriter {
         SheetWriter<SingleAnswerQuestion> writer = new SheetWriter<>("Single answer", workbook);
         if (results.size() == 1) {
             logger.info("Writing question with single answer to file : {}", originalQue);
-            writer.addRow(new SingleAnswerQuestion(date, user, originalQue, results.values().iterator().next()));
+            String searchedKeywords = String.join(",",
+                    stream(replacePunctuations(originalQue)
+                            .split(" "))
+                            .map(String::toLowerCase)
+                            .filter(s -> !stopWords.contains(s))
+                            .collect(Collectors.toSet()));
+            writer.addRow(new SingleAnswerQuestion(date, user, originalQue, results.values().iterator().next(), searchedKeywords));
         }
         return writer;
     }
@@ -232,16 +244,18 @@ public class QuestionStatsWriter {
     }
 
     static class MultipleAnswersToQuestion implements Writable {
-        private static final String[] HEADERS = new String[]{"Date", "User", "Original Question", "No. of answers"};
+        private static final String[] HEADERS = new String[]{"Date", "User", "Original Question", "Keywords", "No. of answers"};
         private final Date date;
         private final String user;
         private final String originalQue;
+        private final String keyWordsCSV;
         private final int count;
 
-        MultipleAnswersToQuestion(Date date, String user, String originalQue, int count) {
+        MultipleAnswersToQuestion(Date date, String user, String originalQue, String keyWordsCSV, int count) {
             this.date = date;
             this.user = user;
             this.originalQue = originalQue;
+            this.keyWordsCSV = keyWordsCSV;
             this.count = count;
         }
 
@@ -252,22 +266,24 @@ public class QuestionStatsWriter {
 
         @Override
         public String[] getDataRow() {
-            return new String[]{sdf.format(date), user, originalQue, ""+count};
+            return new String[]{sdf.format(date), user, originalQue, keyWordsCSV, ""+count};
         }
     }
 
     static class SingleAnswerQuestion implements Writable {
-        private static final String[] HEADERS = new String[]{"Date", "User", "Original Question", "Single Answer"};
+        private static final String[] HEADERS = new String[]{"Date", "User", "Original Question", "Single Answer", "Keywords"};
         private final Date date;
         private final String user;
         private final String originalQue;
         private final String answer;
+        private final String keyWordsCSV;
 
-        SingleAnswerQuestion(Date date, String user, String originalQue, String answer) {
+        SingleAnswerQuestion(Date date, String user, String originalQue, String answer, String keyWordsCSV) {
             this.date = date;
             this.user = user;
             this.originalQue = originalQue;
             this.answer = answer;
+            this.keyWordsCSV = keyWordsCSV;
         }
 
         @Override
@@ -277,7 +293,7 @@ public class QuestionStatsWriter {
 
         @Override
         public String[] getDataRow() {
-            return new String[]{sdf.format(date), user, originalQue, answer};
+            return new String[]{sdf.format(date), user, originalQue, answer, keyWordsCSV};
         }
     }
 
