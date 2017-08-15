@@ -3,11 +3,13 @@ package com.capco.bots.faq;
 import com.capco.bots.IBotHandler;
 import com.capco.bots.IBotsEnum;
 import com.capco.bots.faq.data.Docs;
+import com.capco.bots.faq.data.QuestionStatsWriter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,12 +20,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
+import static com.capco.util.StringUtil.replacePunctuations;
 
 /**
  * Handles FAQs
@@ -33,11 +35,11 @@ public class FAQHandler implements IBotHandler {
 
     private static Logger logger = LogManager.getLogger(FAQHandler.class);
 
-    private final String unansweredQuestionFilePath;
+    private final String questionStatFilePath;
     private final Set<String> stopWords;
 
-    public FAQHandler(String unansweredQuestionFilePath, String stopWordsFilePath) {
-        this.unansweredQuestionFilePath = unansweredQuestionFilePath;
+    public FAQHandler(String questionStatFilePath, String stopWordsFilePath) {
+        this.questionStatFilePath = questionStatFilePath;
         this.stopWords = new HashSet<>();
         try {
             if(stopWordsFilePath!=null && !stopWordsFilePath.isEmpty()) {
@@ -48,7 +50,7 @@ public class FAQHandler implements IBotHandler {
         } catch (IOException e) {
             logger.error("Unable to read stop words file at path {}", stopWordsFilePath, e);
         }
-        logger.debug("Unanswered questions will be logged to : {}", unansweredQuestionFilePath);
+        logger.debug("Unanswered questions will be logged to : {}", questionStatFilePath);
     }
 
     @Override
@@ -60,20 +62,17 @@ public class FAQHandler implements IBotHandler {
     public String processMessage(String user, String message) {
         logger.debug("User : {}, message : {}", user, message);
         if (message.trim().toLowerCase().equals("hi") || message.trim().toLowerCase().equals("hello")) {
-            return message.trim() + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
+            return message.trim() + " " + user + "! I am FAQBot and can help you find answers for FAQs related to Capco. Please enter your question or partial question with keywords. ";
         }
-
+        String messageWithoutPunctuations = replacePunctuations(message);
         StringBuilder result = new StringBuilder();
+        Map<String, String> questionAnswerMap = Collections.emptyMap();
         try {
-            String queryableMessage = convertToQueryable(message);
-            Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
-            logger.debug("Get something from the FAQ WebService");
+            String queryableMessage = convertToQueryable(messageWithoutPunctuations);
+            questionAnswerMap = queryFAQWebService(queryableMessage);
             if (questionAnswerMap.isEmpty()) {
-                logUnansweredQuestion(message);
-                logger.debug("After logging unanswered question");
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
-                questionAnswerMap = doApproximateSearch(message);
-                logger.debug("After doApproximate Search");
+                questionAnswerMap = doApproximateSearch(messageWithoutPunctuations);
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -81,13 +80,20 @@ public class FAQHandler implements IBotHandler {
                     result.append("Meanwhile feel free to contact admin if urgent...");
                 }
             } else {
-                logger.debug("Got some results....returning");
                 result.append(convertToString(questionAnswerMap));
             }
         } catch (Exception e) {
             result.append("Unable to process :").append(message);
             logger.error("Error while processing message : {}", message, e);
         }
+
+        try {
+            new QuestionStatsWriter(user, message, questionAnswerMap, stopWords, questionStatFilePath).write();
+        } catch (IOException | InvalidFormatException e) {
+            logger.error("Unable to write Question stats to excel file {}", questionStatFilePath, e);
+            result.append("\n(There was a problem writing unanswered question to file, please contact admin)");
+        }
+
         logger.debug("returning result : {}", result);
         return result.toString();
     }
@@ -114,7 +120,6 @@ public class FAQHandler implements IBotHandler {
         }
         try {
             Map<String, String> possibleMatches = cf.get();
-            logger.debug("after getting possible Matches in doApproximateSearch " + message);
             return refineSearchResults(possibleMatches, queryTerms);
         } catch (InterruptedException|ExecutionException e) {
             logger.error("Exception while waiting for cumulative response", e);
@@ -129,8 +134,20 @@ public class FAQHandler implements IBotHandler {
         }
         Map<String, String> refinedSearchResult = new HashMap<>();
         for (String que : possibleMatches.keySet()) {
-            String queLowerCase = que.toLowerCase();
-            if (Arrays.asList(queLowerCase.split(" ")).containsAll(queryTerms)) {
+            String queLowerCase = replacePunctuations(que.toLowerCase());
+            String[] queWords = queLowerCase.split(" ");
+            boolean allQTFound = true;
+            for (String queryTerm : queryTerms) {
+                boolean thisQTFound = false;
+                for (String queWord : queWords) {
+                    if (queWord.startsWith(queryTerm) || queryTerm.startsWith(queWord)) {
+                        thisQTFound = true;
+                        break;
+                    }
+                }
+                allQTFound = allQTFound && thisQTFound;
+            }
+            if (allQTFound) {
                 refinedSearchResult.put(que, possibleMatches.get(que));
             }
         }
@@ -138,11 +155,9 @@ public class FAQHandler implements IBotHandler {
     }
 
     private String convertToString(Map<String, String> questionAnswerMap) {
-        String result;
         StringBuilder res = new StringBuilder();
         questionAnswerMap.forEach((Q, A) -> res.append(System.lineSeparator()).append(Q).append(System.lineSeparator()).append(A).append(System.lineSeparator()));
-        result = res.toString();
-        return result;
+        return res.toString();
     }
 
     private Map<String, String> queryFAQWebService(String queryableMessage) throws IOException {
@@ -177,9 +192,8 @@ public class FAQHandler implements IBotHandler {
         return conn;
     }
 
-    private void logUnansweredQuestion(String message) throws IOException {
-        String searchedKeywords = String.join(",", Arrays.stream(message.split(" ")).filter(s -> !stopWords.contains(s)).collect(Collectors.toSet()));
-        Files.write(Paths.get(unansweredQuestionFilePath), (System.lineSeparator() + new Date() + "\t" + message + "\t" + searchedKeywords).getBytes(), CREATE, APPEND);
+    private void logQuestionStatistics(String user, String originalQuestion, String questionWithoutPuncuations, Map<String, String> finalResponse){
+
     }
 
     private URL generateQueryURL(String message) throws MalformedURLException {
@@ -190,8 +204,7 @@ public class FAQHandler implements IBotHandler {
     }
 
     private String convertToQueryable(String message) {
-        message = message.replaceAll(" ", "+");
-        return message;
+        return message.replaceAll(" ", "+");
     }
 
     Map<String, String> parseResponse(String response) {
