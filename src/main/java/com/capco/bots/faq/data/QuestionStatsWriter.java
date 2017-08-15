@@ -75,12 +75,18 @@ public class QuestionStatsWriter {
     }
 
     public synchronized void write() throws IOException, InvalidFormatException {
-        initSheetWriters();
-        logger.debug("initSheetWriters");
-        sheetWriters.forEach(SheetWriter::write);
-        logger.debug("Write on each worksheet");
-        flushFile();
-        logger.debug("flushFile");
+        try{
+            initSheetWriters();
+            logger.debug("initSheetWriters");
+            sheetWriters.forEach(SheetWriter::write);
+            logger.debug("Write on each worksheet");
+            flushFile();
+            logger.debug("flushFile");
+        } catch (Exception e)
+        {
+            logger.error(e.getMessage());
+        }
+
     }
 
     private void flushFile() throws IOException{
