@@ -67,10 +67,13 @@ public class FAQHandler implements IBotHandler {
         try {
             String queryableMessage = convertToQueryable(message);
             Map<String, String> questionAnswerMap = queryFAQWebService(queryableMessage);
+            logger.debug("Get something from the FAQ WebService");
             if (questionAnswerMap.isEmpty()) {
                 logUnansweredQuestion(message);
+                logger.debug("After logging unanswered question");
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
                 questionAnswerMap = doApproximateSearch(message);
+                logger.debug("After doApproximate Search");
                 if (!questionAnswerMap.isEmpty()) {
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
@@ -78,6 +81,7 @@ public class FAQHandler implements IBotHandler {
                     result.append("Meanwhile feel free to contact admin if urgent...");
                 }
             } else {
+                logger.debug("Got some results....returning");
                 result.append(convertToString(questionAnswerMap));
             }
         } catch (Exception e) {
@@ -110,6 +114,7 @@ public class FAQHandler implements IBotHandler {
         }
         try {
             Map<String, String> possibleMatches = cf.get();
+            logger.debug("after getting possible Matches in doApproximateSearch " + message);
             return refineSearchResults(possibleMatches, queryTerms);
         } catch (InterruptedException|ExecutionException e) {
             logger.error("Exception while waiting for cumulative response", e);
