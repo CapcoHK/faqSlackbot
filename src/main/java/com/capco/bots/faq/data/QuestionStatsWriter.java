@@ -51,6 +51,7 @@ public class QuestionStatsWriter {
         this.outputFile = new File(outputFilePath);
         this.stopWords = stopWords;
         Path path = Paths.get(outputFilePath);
+        logger.debug("OutputPath: {}",outputFilePath);
         this.existingExcelFile = Files.exists(path) && Files.isRegularFile(path);
         if (existingExcelFile) {
             try {
@@ -59,8 +60,10 @@ public class QuestionStatsWriter {
                 outputFile.delete();
                 this.workbook = new XSSFWorkbook();
                 this.existingExcelFile = false;
+                logger.error("NotOffierXmlFileException or InvalidFormatException" + e.getMessage());
             } catch (IOException e) {
                 e.printStackTrace();
+                logger.error("IOException" + e.getMessage());
             }
         } else {
             this.workbook = new XSSFWorkbook();
@@ -69,8 +72,11 @@ public class QuestionStatsWriter {
 
     public synchronized void write() throws IOException, InvalidFormatException {
         initSheetWriters();
+        logger.debug("initSheetWriters");
         sheetWriters.forEach(SheetWriter::write);
+        logger.debug("Write on each worksheet");
         flushFile();
+        logger.debug("flushFile");
     }
 
     private void flushFile() throws IOException{
