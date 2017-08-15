@@ -69,20 +69,29 @@ public class FAQHandler implements IBotHandler {
         Map<String, String> questionAnswerMap = Collections.emptyMap();
         try {
             String queryableMessage = convertToQueryable(messageWithoutPunctuations);
+            logger.debug("queryable Message : {}", queryableMessage);
             questionAnswerMap = queryFAQWebService(queryableMessage);
+            logger.debug("After calling queryFAQWebService");
             if (questionAnswerMap.isEmpty()) {
                 result.append("Couldn't find a perfect match for your query. We have stored your query and will look into it. ");
                 questionAnswerMap = doApproximateSearch(messageWithoutPunctuations);
+                logger.debug("After doing Approximate Search");
                 if (!questionAnswerMap.isEmpty()) {
+                    logger.debug("Successful Approximate Search");
                     result.append("Meanwhile here are some approximate answers to your question.\n");
                     result.append(convertToString(questionAnswerMap));
+                    logger.debug("Successful returned Approximate Search");
                 } else {
+                    logger.debug("Fail Approximate Search");
                     result.append("Meanwhile feel free to contact admin if urgent...");
                 }
             } else {
+                logger.debug("Successful Search");
                 result.append(convertToString(questionAnswerMap));
+                logger.debug("Returned Search Result Successfully");
             }
         } catch (Exception e) {
+
             result.append("Unable to process :").append(message);
             logger.error("Error while processing message : {}", message, e);
         }
