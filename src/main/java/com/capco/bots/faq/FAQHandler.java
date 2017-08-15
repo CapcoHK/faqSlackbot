@@ -98,6 +98,7 @@ public class FAQHandler implements IBotHandler {
 
         try {
             new QuestionStatsWriter(user, message, questionAnswerMap, stopWords, questionStatFilePath).write();
+            logger.debug("Writing Question Stats completed!");
         } catch (IOException | InvalidFormatException e) {
             logger.error("Unable to write Question stats to excel file {}", questionStatFilePath, e);
             result.append("\n(There was a problem writing unanswered question to file, please contact admin)");
