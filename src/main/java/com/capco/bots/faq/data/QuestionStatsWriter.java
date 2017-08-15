@@ -77,7 +77,7 @@ public class QuestionStatsWriter {
     public synchronized void write() throws IOException, InvalidFormatException {
         try{
             initSheetWriters();
-            logger.debug("initSheetWriters");
+            logger.debug("initSheetWriters ");
             sheetWriters.forEach(SheetWriter::write);
             logger.debug("Write on each worksheet");
             flushFile();
