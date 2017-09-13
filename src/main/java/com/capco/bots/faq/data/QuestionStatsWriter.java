@@ -56,18 +56,24 @@ public class QuestionStatsWriter {
         this.existingExcelFile = Files.exists(path) && Files.isRegularFile(path);
         if (existingExcelFile) {
             try {
-                logger.debug("Has the File: {}",outputFilePath);
+                logger.debug("Has the File: {}", outputFilePath);
                 this.workbook = new XSSFWorkbook(outputFile);
-                logger.debug("Open the file {}",outputFilePath);
-            } catch (NotOfficeXmlFileException | InvalidFormatException  e) {
+                logger.debug("Open the file {}", outputFilePath);
+            } catch (NotOfficeXmlFileException | InvalidFormatException e) {
+                logger.debug("NotOfficeXmlFileException or Invalid Format Exception found");
                 outputFile.delete();
+                logger.debug("Deleted successfully");
                 this.workbook = new XSSFWorkbook();
                 this.existingExcelFile = false;
                 logger.error("NotOffierXmlFileException or InvalidFormatException" + e.getMessage());
             } catch (IOException e) {
                 e.printStackTrace();
                 logger.error("IOException" + e.getMessage());
+            } catch (Exception ex)
+            {
+                logger.error("Exception" + ex.getMessage());
             }
+
         } else {
             logger.debug("Created new one");
             this.workbook = new XSSFWorkbook();

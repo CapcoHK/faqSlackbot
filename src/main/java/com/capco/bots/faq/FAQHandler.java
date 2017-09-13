@@ -96,13 +96,13 @@ public class FAQHandler implements IBotHandler {
             logger.error("Error while processing message : {}", message, e);
         }
 
-       /* try {
+        try {
             new QuestionStatsWriter(user, message, questionAnswerMap, stopWords, questionStatFilePath).write();
             logger.debug("Writing Question Stats completed!");
         } catch (IOException | InvalidFormatException e) {
             logger.error("Unable to write Question stats to excel file {}", questionStatFilePath, e);
             result.append("\n(There was a problem writing unanswered question to file, please contact admin)");
-        }*/
+        }
 
         logger.debug("returning result : {}", result);
         return result.toString();
